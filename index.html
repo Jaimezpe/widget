@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pantalla de entrada</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      height: 100vh;
+      width: 100vw;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+    }
+    .time {
+      font-size: 6em;
+      font-weight: bold;
+    }
+    .weather, .stocks {
+      text-align: center;
+    }
+    .weather-icon {
+      font-size: 4em;
+      margin: 10px 0;
+    }
+    .temperature {
+      font-size: 3em;
+      cursor: pointer;
+    }
+    .weather-desc, .humidity, .wind, .update-time {
+      font-size: 1.2em;
+      margin: 5px 0;
+    }
+    .stock-title {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    .stock-price {
+      font-size: 2.5em;
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+  </style>
+</head>
+<body>
+  <div class="time" id="time"></div>
+
+  <div class="weather-panel">
+    <div id="location">Madrid</div>
+    <div class="weather-icon" id="weather-icon">☀️</div>
+    <div class="temperature" id="temperature" onclick="toggleTemperatureUnit()">--°C</div>
+    <div class="weather-desc" id="weather-desc">--</div>
+    <div class="humidity">Humedad: <span id="humidity">--%</span></div>
+    <div class="wind">Viento: <span id="wind">-- km/h</span></div>
+    <div class="update-time" id="weather-update">Actualizando...</div>
+  </div>
+
+  <div class="stocks">
+    <div class="stock-title">Microsoft (MSFT)</div>
+    <div class="stock-price" id="stock-price">--</div>
+  </div>
+
+  <script>
+    // ========================================
+    // CONFIGURACIÓN
+    // ========================================
+    const STOCK_API_KEY = 'TU_ALPHA_VANTAGE_API_KEY'; 
+    const LAT = 40.4168;  
+    const LON = -3.7038; 
+
+    // Variables globales
+    let temperatureUnit = 'C';
+    let currentWeatherData = null;
+    let isPageVisible = true;
+
+    // ========================================
+    // RELOJ
+    // ========================================
+    function updateTime() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString("es-ES", {hour: "2-digit", minute: "2-digit", second: "2-digit"});
+      document.getElementById("time").textContent = timeString;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // ========================================
+    // UTILIDADES
+    // ========================================
+    function celsiusToFahrenheit(celsius) {
+      return (celsius * 9/5) + 32;
+    }
+    function getWeatherIcon(code) {
+      const icons = {
+        0: "☀️", 1: "🌤️", 2: "🌤️", 3: "☁️",
+        45: "🌫️", 48: "🌫️",
+        51: "🌦️", 53: "🌦️", 55: "🌦️",
+        61: "🌧️", 63: "🌧️", 65: "🌧️",
+        71: "🌨️", 73: "🌨️", 75: "🌨️",
+        95: "⛈️", 96: "⛈️", 99: "⛈️"
+      };
+      return icons[code] || "❓";
+    }
+
+    // ========================================
+    // CLIMA - Open-Meteo
+    // ========================================
+    async function updateWeather() {
+      if (!isPageVisible) return;
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current_weather=true&hourly=relativehumidity_2m,windspeed_10m&timezone=Europe/Madrid`;
+        const data = await fetch(url).then(res => res.json());
+        if (!data.current_weather) throw new Error("Datos no disponibles");
+        currentWeatherData = data;
+        displayWeatherData(data);
+      } catch (error) {
+        console.error("Error obteniendo clima:", error);
+        document.getElementById("weather-desc").innerHTML = '<div class="error-message">Error cargando clima</div>';
+      }
+    }
+    function displayWeatherData(data) {
+      const tempC = data.current_weather.temperature;
+      const temp = temperatureUnit === 'C' ? Math.round(tempC) : Math.round(celsiusToFahrenheit(tempC));
+      const unit = temperatureUnit === 'C' ? '°C' : '°F';
+      document.getElementById("temperature").textContent = `${temp}${unit}`;
+      document.getElementById("weather-icon").textContent = getWeatherIcon(data.current_weather.weathercode);
+      document.getElementById("weather-desc").textContent = `Viento ${data.current_weather.windspeed} km/h`;
+      document.getElementById("humidity").textContent = data.hourly.relativehumidity_2m[0] + "%";
+      document.getElementById("wind").textContent = Math.round(data.current_weather.windspeed) + " km/h";
+      const updateTime = new Date().toLocaleTimeString("es-ES", { hour12: false });
+      document.getElementById("weather-update").textContent = `Actualizado: ${updateTime}`;
+      document.querySelector(".weather-panel").classList.add("fade-in");
+      setTimeout(() => document.querySelector(".weather-panel").classList.remove("fade-in"), 300);
+    }
+    function toggleTemperatureUnit() {
+      temperatureUnit = temperatureUnit === "C" ? "F" : "C";
+      if (currentWeatherData) {
+        displayWeatherData(currentWeatherData);
+      }
+    }
+    setInterval(updateWeather, 300000);
+    updateWeather();
+
+    // ========================================
+    // BOLSA - Alpha Vantage
+    // ========================================
+    async function updateStock() {
+      if (!isPageVisible) return;
+      try {
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=MSFT&apikey=${STOCK_API_KEY}`;
+        const data = await fetch(url).then(res => res.json());
+        const price = data["Global Quote"]["05. price"];
+        if (price) {
+          document.getElementById("stock-price").textContent = `$${parseFloat(price).toFixed(2)}`;
+        } else {
+          document.getElementById("stock-price").textContent = "Error";
+        }
+      } catch (error) {
+        console.error("Error obteniendo acciones:", error);
+        document.getElementById("stock-price").textContent = "Error";
+      }
+    }
+    setInterval(updateStock, 600000);
+    updateStock();
+
+    // ========================================
+    // VISIBILIDAD
+    // ========================================
+    document.addEventListener("visibilitychange", () => {
+      isPageVisible = !document.hidden;
+    });
+  </script>
+</body>
+</html>
