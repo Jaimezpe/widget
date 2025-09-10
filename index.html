@@ -232,22 +232,45 @@
   </style>
 </head>
 <body>
-  <div class="time" id="time"></div>
+    <div class="container">
+        <!-- Panel Reloj -->
+        <div class="panel clock-panel">
+            <div class="time" id="time">--:--:--</div>
+            <div class="date" id="date">Cargando...</div>
+        </div>
 
-  <div class="weather-panel">
-    <div id="location">Madrid</div>
-    <div class="weather-icon" id="weather-icon">☀️</div>
-    <div class="temperature" id="temperature" onclick="toggleTemperatureUnit()">--°C</div>
-    <div class="weather-desc" id="weather-desc">--</div>
-    <div class="humidity">Humedad: <span id="humidity">--%</span></div>
-    <div class="wind">Viento: <span id="wind">-- km/h</span></div>
-    <div class="update-time" id="weather-update">Actualizando...</div>
-  </div>
+        <!-- Panel Clima -->
+        <div class="panel weather-panel">
+            <div class="location" id="location">Obteniendo ubicación...</div>
+            <div class="weather-main">
+                <div class="weather-icon" id="weather-icon">☀️</div>
+                <div class="temperature" id="temperature" onclick="toggleTemperatureUnit()">--°</div>
+            </div>
+            <div class="weather-desc" id="weather-desc">Cargando...</div>
+            <div class="weather-details">
+                <div class="weather-detail">Humedad: <span id="humidity">--%</span></div>
+                <div class="weather-detail">Viento: <span id="wind">-- km/h</span></div>
+            </div>
+            <div class="last-update" id="weather-update"></div>
+        </div>
 
-  <div class="stocks">
-    <div class="stock-title">Microsoft (MSFT)</div>
-    <div class="stock-price" id="stock-price">--</div>
-  </div>
+        <!-- Panel Bolsa -->
+        <div class="panel stock-panel">
+            <div class="symbol">MICROSOFT (MSFT)</div>
+            <div class="stock-price" id="stock-price">$---.--</div>
+            <div class="stock-change" id="stock-change">
+                <span class="arrow" id="stock-arrow">—</span>
+                <span id="change-amount">$-.-- (-.--%)</span>
+            </div>
+            <div class="sparkline-container">
+                <svg class="sparkline" id="sparkline" viewBox="0 0 300 60">
+                    <polyline id="sparkline-line" fill="none" stroke="var(--text-secondary)" stroke-width="2"/>
+                </svg>
+            </div>
+            <div class="last-update" id="stock-update"></div>
+        </div>
+    </div>
+
 
   <script>
     // ========================================
